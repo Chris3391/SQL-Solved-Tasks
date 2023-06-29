@@ -1,0 +1,129 @@
+###################################### 1 ##########################################
+# Add following model into the PC table: 
+# code:20 
+# model:2111 
+# speed:950 
+# ram:512
+# hd:60
+# cd:52x
+$ price:1100
+
+INSERT INTO PC VALUES (20, 2111, 950, 512, 60, '52x', 1100)
+
+###################################### 2 ##########################################
+# Add to the Product table following products from maker Z: 
+# printer model 4003
+# PC model 4001
+# laptop model 4002
+
+INSERT INTO Product (maker, type, model)
+    VALUES ('Z','printer', 4003), ('Z','PC', 4001),
+            ('Z','laptop', 4002)
+
+###################################### 3 ##########################################
+# Add the model 4444 with into the PC table.
+# code=22 
+# speed=1200 
+# price=1350  
+# The absent features should be supplied with the default values for corresponding columns.
+
+INSERT INTO PC (model, code, speed, price) 
+VALUES (4444, 22, 1200, 1350)
+
+###################################### 4 ##########################################
+# For each group of laptops with the identical model number, add following record into PC table:
+# code: minimal code among laptops in the group +20;
+# model: laptop's model number +1000;
+# speed: maximal speed among laptops in the group;
+# ram: maximal ram size among laptops in the group *2
+# hd: maximal hd capacity among laptops in the group *2;
+# cd: default value;
+# price: maximal price among laptops in the group divided by 1.5.
+# Remark. Consider model number as numeric.
+
+INSERT INTO PC (code, model, speed, ram, hd, price)
+    SELECT MIN (code) + 20, model + 1000,
+    MAX (speed), MAX (ram) * 2, MAX (hd) *2, MAX (price) /1.5
+    FROM Laptop GROUP BY model
+
+###################################### 5 ##########################################
+# Delete from PC table the computers having minimal hdd size or minimal ram size.
+
+DELETE FROM PC WHERE hd IN
+            (SELECT DISTINCT MIN(hd) FROM PC)
+    OR ram IN (SELECT DISTINCT MIN(ram) FROM PC)
+
+###################################### 6 ##########################################
+# Delete from the Laptop table all the laptops of those makers who don't produce printers.
+
+DELETE FROM Laptop WHERE model IN
+            (SELECT Laptop.model FROM Laptop JOIN Product
+                    ON Product.model = Laptop.model WHERE Product.maker NOT IN
+                    (SELECT Product.maker FROM Product WHERE Product.type = 'Printer'))
+
+###################################### 7 ##########################################
+# Maker A has passed manufacture of printers to maker Z. Perform necessary changes.
+
+UPDATE Product
+    SET maker = 'Z' WHERE maker = 'A' AND type = 'Printer'
+
+###################################### 8 ##########################################
+# Delete from Ships table all the ships sunk in battles.
+
+DELETE FROM Ships WHERE name IN
+            (SELECT ship FROM Outcomes JOIN Ships ON
+                    Outcomes.ship = Ships.name WHERE Outcomes.result = 'sunk')
+
+###################################### 9 ##########################################
+# Modify data in Classes table so that gun calibers are measured in centimeters (1 inch = 2.5cm)
+# and the displacement - in metric tons (1 metric ton = 1.1 tons).
+# Calculate displacement to within integer.
+
+UPDATE Classes
+    SET bore = bore * 2.5,
+            displacement = ROUND(displacement / 1.1, 0)
+
+###################################### 10 ##########################################
+# Add into the PC table all the PC models from the Product table that are absent from the PC table.
+# Along with above the inserted models must have the specifications:
+# 1. The code should be equal to the model number plus maximal code value which has been in the PC table before insert operation.
+# 2. Speed, RAM and HD capacities, and CD-speed should be maximal among all available corresponding values in the PC table.
+# 3. The price should be an average among all the PCs which have been in the PC table before insert operation.
+
+INSERT INTO PC
+        SELECT
+    p.model + MAX(pc.code) code,
+    p.model,
+    MAX(pc.speed) speed,
+    MAX(pc.ram) ram,
+    MAX(pc.hd) hd,
+
+    CAST(MAX(CAST(REPLACE(pc.cd,'x','')AS int))AS varchar)+'x' cd,
+    AVG(pc.price) price
+    FROM product p
+    INNER JOIN  pc
+            ON
+    p.type= 'pc'
+    WHERE p.model NOT IN (SELECT model from pc)
+    GROUP BY p.model
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
