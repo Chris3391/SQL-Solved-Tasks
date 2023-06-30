@@ -1,0 +1,78 @@
+###################################### 1 ##########################################
+# For makers who have products with a known price in at least one of the Laptop, PC, or Printer tables, 
+# find the maximum price for each product type.
+# Output: maker, maximum price of laptops, maximum price of PCs, maximum price of printers.
+
+SELECT Product.maker, MAX(Laptop.price) AS laptop,
+MAX(PC.price) AS pc, MAX(Printer.price) AS printer
+FROM Product LEFT JOIN Laptop ON Product.model = Laptop.model
+LEFT JOIN PC ON Product.model = PC.model
+LEFT JOIN Printer ON Product.model = Printer.model
+GROUP BY Product.maker
+
+###################################### 2 ##########################################
+# Get all ship classes of Russia. If there are no Russian ship classes in the database, 
+# display classes of all countries present in the DB.
+# Result set: country, class.
+
+SELECT country, class
+FROM Classes
+WHERE country = 'Russia'
+UNION 
+SELECT country, class
+FROM Classes
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Classes
+    WHERE country = 'Russia')
+ORDER BY country ASC
+
+###################################### 3 ##########################################
+
+# Find the names of different passengers that ever travelled more than once occupying seats with the same number.
+
+SELECT p.name
+FROM Passenger p JOIN Pass_in_trip pt
+ON p.ID_psg = pt.ID_psg
+GROUP BY p.name, p.id_psg
+HAVING COUNT(DISTINCT pt.place) < COUNT(*)
+
+###################################### 4 ##########################################
+# Find out the average price of PCs and laptops produced by maker A.
+# Result set: one overall average price for all items.
+
+SELECT AVG(price) AS Avg_price FROM 
+(SELECT price FROM PC JOIN Product ON PC.model = Product.model 
+WHERE Product.maker = 'A' 
+UNION ALL
+SELECT price FROM Laptop JOIN Product ON Laptop.model = Product.model 
+WHERE Product.maker = 'A') AS overall_price
+
+###################################### 5 ##########################################
+# List the models of any type having the highest price of all products present in the database.
+
+SELECT p.model
+FROM Product p
+WHERE p.model IN (
+  SELECT model
+  FROM (
+    SELECT model, price FROM PC
+    UNION ALL
+    SELECT model, price FROM Laptop
+    UNION ALL
+    SELECT model, price FROM Printer
+  ) AS combined_prices
+  WHERE price = (
+    SELECT MAX(price)
+    FROM (
+      SELECT price FROM PC
+      UNION ALL
+      SELECT price FROM Laptop
+      UNION ALL
+      SELECT price FROM Printer
+    ) AS all_prices
+  )
+)
+
+
+
